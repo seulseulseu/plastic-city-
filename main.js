@@ -1,784 +1,627 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'GLTFLoader'
 import { OrbitControls } from 'OrbitControls';
-import { EffectComposer} from 'EffectComposer';
-import { RenderPass} from 'RenderPass';
-import { UnrealBloomPass} from 'UnrealBloomPass';
+import { EffectComposer } from 'EffectComposer';
+import { RenderPass } from 'RenderPass';
+import { UnrealBloomPass } from 'UnrealBloomPass';
+import { VRButton } from 'VRButton';
+// import { TextGeometry } from 'TextGeometry';
 
-//scene, camera, renderer
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.z = 50;
-
-window.addEventListener('resize', handleResize);
-
-let renderer = new THREE.WebGLRenderer({
-  antialias: true,
+window.addEventListener('load', function () {
+  init();
 });
-renderer.setClearColor(0x222222);
-renderer.setSize(window.innerWidth, window.innerHeight)
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
-
-document.body.appendChild(renderer.domElement)
-
-scene.background = new THREE.Color(0x000000)
-scene.fog = new THREE.Fog(0x000000, 8, 180) //숫자가 작을수록 뿌옇고 넓음 //위치,정도?
-
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.autoRotate = true;
-controls.autoRotateSpeed = 1.5;
-controls.rotateSpeed = 0.75; //OrbitControls로 회전시킬 때 속도 
-controls.enableDamping = true;
-// controls.enableZoom = false; //zoom in-out 불가 
-
-//card min, max 회전값설정 ( OrbitControls 수직방향)
-// controls.minPolarAngle = Math.PI / 2 - Math.PI / 3;
-// controls.maxPolarAngle = Math.PI / 2 + Math.PI / 3;
-
-controls.minDistance = 2;
-controls.maxDistance = 80;
+async function init() {
+  var raycaster, mouse, container;
+  //scene, camera, renderer
+  let scene = new THREE.Scene();
+  let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+  // let mouse = new THREE.Vector2(), SELECTED;
+  // let radius = 100, theta = 0;
+  // let container = document.getElementById( 'webdolRayCaster' );
+  container = document.createElement('div');
+  document.body.appendChild(container);
+  // raycaster = new THREE.Raycaster();
+  // mouse = new THREE.Vector2()
 
 
-const composer = new EffectComposer(renderer);
-const renderScene = new RenderPass(scene, camera);
-composer.addPass(renderScene);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-bloomPass.threshold = 0.1;
-bloomPass.radius = 1;
-bloomPass.strength = 1;
-composer.addPass(bloomPass);
+  const loadingManager = new THREE.LoadingManager();
 
-//gltf loader 
+  const gltfLoader = new GLTFLoader(loadingManager);
 
-let gltfmodel;
-let gltfmodel2;
-let gltfmodel3;
-let gltfmodel4;
-let gltfmodel5;
-let gltfmodel6;
-let gltfmodel7;
-let gltfmodel8;
-let gltfmodel9;
-let gltfmodel10;
-let gltfmodel11;
-let gltfmodel12;
-let gltfmodel13;
-let gltfmodel14;
-let gltfmodel15;
-let gltfmodel16;
-let gltfmodel17;
-let gltfmodel18;
-let gltfmodel19;
-let gltfmodel20;
+  window.addEventListener('resize', handleResize);
 
-let loader = new GLTFLoader();
-
-//sound play 
-const listener = new THREE.AudioListener();
-camera.add(listener);
-
-window.addEventListener('click', () => {
-  // AudioContext 시작 코드
-  const audioContext = new AudioContext();
-
-  // Three.js 오디오 로드 및 재생
-  const audioLoader = new THREE.AudioLoader();
-  const sound = new THREE.PositionalAudio(listener); // listener는 이미 정의되어 있어야 합니다.
-
-  audioLoader.load('./assets/sound/mysound.mp3', function (buffer) {
-    sound.setBuffer(buffer);
-    sound.setRefDistance(20);
-    sound.play();
+  let renderer = new THREE.WebGLRenderer({
+    antialias: true,
   });
-});
+  renderer.setClearColor(0x222222);
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap; // default THREE.PCFShadowMap
+  // renderer.setPixelRatio(window.devicePixelRatio);//기기에 맞게 pixel value조절
+  // renderer.setClearColor(0xf0f0f0);
+
+  document.body.appendChild(renderer.domElement)
+  document.body.appendChild(VRButton.createButton(renderer))
+
+
+
+  scene.background = new THREE.Color(0xebfff0)
+  // scene.fog = new THREE.Fog(0xfff9cf, 1, 0.01) //숫자가 작을수록 뿌옇고 넓음 //위치,정도?
+
+
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0.5;
+  controls.rotateSpeed = 1; //OrbitControls로 회전시킬 때 속도 
+  controls.enableDamping = true;
+  controls.minDistance = 2; // Minimum distance for zoom
+  controls.maxDistance = 20000; // Maximum distance for zoom
+  // controls.dampingFactor = 1; // Damping factor for smooth rotation and zoom
+  controls.zoomSpeed = 1; // Adjust this value to control the zoom speed
+
+  const composer = new EffectComposer(renderer);
+  const renderPass = new RenderPass(scene, camera);
+  composer.addPass(renderPass);
+  //해상도, strength, radius, threshold
+  const unrealBloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 120, 100, 100)
+  unrealBloomPass.threshold = 0.1;
+  unrealBloomPass.radius = 1;
+  unrealBloomPass.strength = 100;
+  composer.addPass(unrealBloomPass);
+
+  let gltfmodel;
+  let gltfmodel1;
+  let gltfmodel2;
+  let gltfmodel3;
+  let gltfmodel4;
+  let gltfmodel5;
+  let gltfmodel6;
+  let gltfmodel7;
+  let gltfmodel8;
+  let gltfmodel9;
+  let gltfmodel10;
+  let gltfmodel145;
+  let gltfmodel1456;
+  let a = 0;
+  //1cube
+  // let geometry = new THREE.DodecahedronGeometry();
+
+  // for (let i = 0; i < 1600; i++) {
+  //   let grey = Math.random();
+  //   let object = new THREE.Mesh(
+  //     geometry,
+  //     new THREE.MeshPhongMaterial({
+  //       color: new THREE.Color(0Xbababa),
+  //       // wireframe: true,
+  //       opacity:0.4,
+  //       transparent: true
+  //     })
+  //   );
+
+  //   object.position.x = Math.random() * 2000 - 800;
+  //   object.position.y = Math.random() * 2000 - 800;
+  //   object.position.z = Math.random() * 2000 - 800;
+  //   object.rotation.x = Math.random() * 2 * Math.PI;
+  //   object.rotation.y = Math.random() * 2 * Math.PI;
+  //   object.rotation.z = Math.random() * 2 * Math.PI;
+  //   // object.scale.set(10, 10, 10)
+  //   object.scale.x = Math.random() + 25;
+  //   object.scale.y = Math.random() + 25;
+  //   object.scale.z = Math.random() + 25;
+  //   scene.add(object);
+  // }
+
+
+  let loader = new GLTFLoader();
 
 
 
 
-//2층 쓰레기 
-loader.load('./models/mygltf/building2.gltf', function (gltf) {
-  gltfmodel = gltf.scene;
-  gltfmodel.scale.set(600, 600, 600);
-  gltfmodel.position.set(0, -4, 0)
-  gltfmodel.rotation.z = 0.2;
-  gltfmodel.castShadow = true;
-  gltfmodel.receiveShadow = true;
-  scene.add(gltfmodel);
-  // gltfmodel.traverse(function (node) {
-  //   if (node.isMesh || node.isLight) {
-  //     node.castShadow = true;
-  //     node.receiveShadow = true;
-  //     node.mapping = THREE.EquirectangularRefractionMapping;
-  //   }
-  // })
+  const cubeGeometry = new THREE.IcosahedronGeometry(2);
+  const cubeMaterial = new THREE.MeshLambertMaterial({
+    // color: new THREE.Color(0xcc99ff),
+    color: 0x4a7aff,
+    emissive: 0x4a7aff,
+    // tranctparency 
+    transparent: true,
+    // wireframe:true,
+    // opacity: 0.8,
+    // visible:true or false,
+    //FrontSide, BackSide, DoubleSide
+    side: THREE.DoubleSide,
+  });
+  const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+  cube.position.set(50, 20, -40);
+  cube.scale.set(8, 8, 8)
+
+  // if (intersects.length > 0) {
+  //   window.open(intersects[0].object.userData.URL);
+  // }
+  scene.add(cube);
 
 
-  let pts = [];
-  let v3 = new THREE.Vector3();
-  gltfmodel.traverse(child => {
+
+  loader.load('./models/mygltf/island new.gltf', function (gltf) {
+    gltfmodel1 = gltf.scene;
+    gltfmodel1.scale.set(50, 50, 50);
+    gltfmodel1.position.set(0, -2, 0)
+    gltfmodel1.rotation.z = 0.002;
+    gltfmodel1.castShadow = true;
+    gltfmodel1.receiveShadow = true;
+    scene.add(gltfmodel1);
+
+    gltfmodel1.traverse(child => {
       if (child.isMesh) {
-          let pos = child.geometry.attributes.position;
-          for (let i = 0; i < pos.count; i++) {
-              v3.fromBufferAttribute(pos, i);
-
-              // Add some randomness to the particle positions
-              v3.x += Math.random() * 150;
-              v3.y += Math.random() * 150;
-              v3.z += Math.random() * 150;
-
-              pts.push(v3.clone());
-          }
+      //   const material = new THREE.MeshStandardMaterial({
+      //   color: 0xffffff,
+      //   roughness: 1,
+      //   shading: THREE.FlatShading
+      // });
+      //   let pos = child.geometry.attributes.position;
+        child.castShadow = true;
+        child.receiveShadow = true;
+      //   child.material = material;
       }
+    });
+  })
+
+  loader.load('./models/mygltf/human.gltf', function (gltf) {
+    gltfmodel145 = gltf.scene;
+    gltfmodel145.scale.set(10, 10, 10);
+    gltfmodel145.position.set(100,50,100)
+    gltfmodel145.castShadow = true;
+    gltfmodel145.receiveShadow = true;
+    
+    gltfmodel145.traverse(child => {
+      if (child.isMesh) {
+        const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 1,
+        shading: THREE.FlatShading
+      });
+        let pos = child.geometry.attributes.position;
+        child.castShadow = true;
+        child.receiveShadow = true;
+        child.material = material;
+      }
+    });
+    scene.add(gltfmodel145);
   });
 
-  let g = new THREE.BufferGeometry().setFromPoints(pts);
-  g.center();
-
-  // Increase the size of the particles
-  let m = new THREE.PointsMaterial({ color: "orange", size: 0.2});
-
-  let p = new THREE.Points(g, m);
-  scene.add(p);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-
-//model2 오토바이
-loader.load('./models/mygltf/bike.gltf', function (gltf) {
-  gltfmodel2 = gltf.scene;
-  gltfmodel2.scale.set(1900, 1900, 1900);
-  gltfmodel2.position.set(-10, -1, 15)
-  gltfmodel2.rotation.x += 0.8;
-  gltfmodel2.castShadow = true;
-  gltfmodel2.receiveShadow = true;
-  scene.add(gltfmodel2);
-  gltfmodel2.add(sounds)
-
-  gltfmodel2.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-}, undefined, function (error) {
-  console.error(err)
-})
-
-//3층 야채 
-loader.load('./models/mygltf/vegetable.gltf', function (gltf) {
-  gltfmodel3 = gltf.scene;
-  gltfmodel3.scale.set(600, 600, 600);
-  gltfmodel3.position.set(0, 8, 0)
-  gltfmodel3.rotation.x += 0.05;
-  gltfmodel3.castShadow = true;
-  gltfmodel3.receiveShadow = true;
-  scene.add(gltfmodel3);
-  gltfmodel3.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/trash2.gltf', function (gltf) {
-  gltfmodel4 = gltf.scene;
-  gltfmodel4.scale.set(2500, 2500, 2500)
-  gltfmodel4.position.set(-11, 0, -20)
-  gltfmodel4.castShadow = true;
-  gltfmodel4.receiveShadow = true;
-  gltfmodel4.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel4);
-}, undefined, function (error) {
-  console.error(error)
-})
-
-//사람
-loader.load('./models/mygltf/cass.gltf', function (gltf) {
-  gltfmodel5 = gltf.scene;
-  gltfmodel5.scale.set(1500, 1500, 1500);
-  gltfmodel5.position.set(-10, -4, -10)
-  gltfmodel5.castShadow = true;
-  gltfmodel5.receiveShadow = true;
-
-  gltfmodel5.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
+  loader.load('./models/mygltf/word1.gltf', function (gltf) {
+    gltfmodel1456 = gltf.scene;
+    gltfmodel1456.scale.set(50, 50, 50);
+    gltfmodel1456.position.set(50,5,50)
+    gltfmodel1456.castShadow = true;
+    gltfmodel1456.receiveShadow = true;
+    
+    gltfmodel1456.traverse(child => {
+      if (child.isMesh) {
+        const material = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 1,
+        shading: THREE.FlatShading
+      });
+        let pos = child.geometry.attributes.position;
+        child.castShadow = true;
+        child.receiveShadow = true;
+        child.material = material;
+      }
+    });
+    scene.add(gltfmodel1456);
   });
 
-  scene.add(gltfmodel5);
-}, undefined, function (error) {
-  console.error(err)
-})
 
-// let mX = 0
-// let mY = 0;
-// document.onmousemove = getMouseXY;
-// function getMouseXY(e) {
-//   mX = e.pageX;
-//   mY = e.pageY;
-//   gltfmodel5.position.x = mX*0.02;
-//   gltfmodel5.position.y = mY*0.02;
-//   }
+//   for (let i = 0; i < 20; i++) {
+//   loader.load('./models/mygltf/dol.gltf', function (gltf) {
+//     gltfmodel4 = gltf.scene;
+//     gltfmodel4.scale.set(44000, 44000, 44000);
+//     gltfmodel4.position.set(2000* Math.random(), -2000* Math.random(), 2000* Math.random())
+//     gltfmodel4.rotation.y = 100*Math.random();
+//     gltfmodel4.rotation.x = 100*Math.random();
+//     gltfmodel4.rotation.z = 100*Math.random();
+//     gltfmodel4.castShadow = true;
+//     gltfmodel4.receiveShadow = true;
+    
+//     scene.add(gltfmodel4);
+
+//     gltfmodel4.traverse(child => {
+//       if (child.isMesh) {
+
+//         const newMaterial = new THREE.MeshLambertMaterial({
+//           // color: 0xffffff,
+//           // emissive: 0x000000,
+//           // tranctparency 
+//           transparent: true,
+//           opacity: 1,
+//           wireframe: true,
+//           // visible:true or false,
+//           //FrontSide, BackSide, DoubleSide
+//           side: THREE.DoubleSide,
+//         });     
+//         child.material = newMaterial;
+//       }
+//     });
+//   });
+// }
+
+// for (let i = 0; i < 20; i++) {
+//   loader.load('./models/mygltf/dol.gltf', function (gltf) {
+//     gltfmodel4 = gltf.scene;
+//     gltfmodel4.scale.set(44000, 44000, 44000);
+//     gltfmodel4.position.set(-2000* Math.random(), 2000* Math.random(), -2000* Math.random())
+//     gltfmodel4.rotation.y = 100*Math.random();
+//     gltfmodel4.rotation.x = 100*Math.random();
+//     gltfmodel4.rotation.z = 100*Math.random();
+//     gltfmodel4.castShadow = true;
+//     gltfmodel4.receiveShadow = true;
+//     scene.add(gltfmodel4);
+
+//     gltfmodel4.traverse(child => {
+//       if (child.isMesh) {
+
+//         const newMaterial = new THREE.MeshLambertMaterial({
+//           // color: 0xffffff,
+//           // emissive: 0x000000,
+//           // tranctparency 
+//           transparent: true,
+//           opacity: 0.2,
+//           wireframe: true,
+//           // visible:true or false,
+//           //FrontSide, BackSide, DoubleSide
+//           side: THREE.DoubleSide,
+//         });     
+//         child.material = newMaterial;
+//       }
+//     });
+//   });
+// }
+  // const gltf = await gltfLoader.loadAsync('./models/mygltf/character2.gltf');
+  // const mygltf = gltf.scene
+  // mygltf.position.set(0, 6, 200);
+  // mygltf.scale.set(0.7, 0.7, 0.7);
+  // mygltf.rotation.y = 10;
+  // mygltf.castShadow = true;
+  // mygltf.receiveShadow = true;
+  // mygltf.traverse(child => {
+  //   if (child.isMesh) {
+  //     child.castShadow = true;
+  //     child.receiveShadow = true;
+  //   }
+  // });
+
+  // scene.add(mygltf);
+  
+//하늘에서 오는 빛과 지면에 닿는 빛 
+  let HemiLight = new THREE.HemisphereLight(0xffffff, 0xfffff, 0.1);
+  scene.add(HemiLight);
+
+  let light = new THREE.DirectionalLight(0xfff9cf, 1);
+  light.position.set(10, 10, 0);
+  light.target.position.set(0, 0, 0);
+  light.castShadow = true;
+  light.receiveShadow = true
+  light.shadow.camera.top = 2500;
+  light.shadow.camera.bottom = -2500;
+  light.shadow.camera.left = 2500;
+  light.shadow.camera.right = -2500;
+  light.shadow.mapSize.width = 8148;
+  light.shadow.mapSize.height = 8148;
+  light.shadow.camera.near = 1;
+  light.shadow.camera.far = 2000;
+
+  light.shadow.radius = 1;
+  light.shadow.blurSamples = 205;
+  light.shadow.focus = 1;
+  light.shadow.bias = -0.001;;
+;
+  scene.add(light);
+
+  let light3 = new THREE.DirectionalLight(0xffffff, 1.5);
+  light3.position.set(-10, 6, 0);
+  light3.target.position.set(0, 0, 0);
+  light3.castShadow = true;
+  light3.receiveShadow = true
+  light3.shadow.camera.top = 2500;
+  light3.shadow.camera.bottom = -2500;
+  light3.shadow.camera.left = 2500;
+  light3.shadow.camera.right = -2500;
+  light3.shadow.mapSize.width = 8148;
+  light3.shadow.mapSize.height = 8148;
+  light3.shadow.camera.near = 1;
+  light3.shadow.camera.far = 2000;
+
+  light3.shadow.radius = 1;
+  light3.shadow.blurSamples = 205;
+  light3.shadow.focus = 1;
+  light3.shadow.bias = -0.001;;
+;
+  scene.add(light3);
+//environment light (no shadow, highlight)
+  const Light2 = new THREE.AmbientLight(0xffffff, 0.8)
+  Light2.castShadow = true;
+  Light2.position.set(0, 900, 0)
+  scene.add(Light2)
+
+  // const ambientLight = new THREE.AmbientLight(0xffffff, .3)
+  // scene.add(ambientLight)
 
 
-loader.load('./models/mygltf/warehouse.gltf', function (gltf) {
-  gltfmodel6 = gltf.scene;
-  gltfmodel6.scale.set(3500, 3500, 3500);
-  gltfmodel6.position.set(25, -48, 30)
-  gltfmodel6.castShadow = true;
-  gltfmodel6.receiveShadow = true;
-  gltfmodel6.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
+
+  //카메라 초기 위치
+  camera.position.set(250, 550, 250); // 시작 위치 (x, y, z)
+  camera.lookAt(0, 0, 0);
+  // 목표 카메라 위치 설정
+  const mytargetPosition = new THREE.Vector3(0, 42, 25);
+  // 애니메이션 변수 설정
+  const animationDuration = 80000; // 애니메이션 지속 시간 (ms)
+
+  let animationStart = null;
+  let t = 0.05;
+  // camera.position.z = 138;
+  // camera.position.y = 125;
+
+
+  //loading camera move 
+  //초기 페이지 로드시 애니메이션 
+  // function myanimate(timestamp) {
+  //   if (!animationStart) animationStart = timestamp;
+  //   const elapsed = timestamp - animationStart;
+
+  //   // 보간된 카메라 위치 계산 (선형 보간)
+  //   const progress = Math.min(elapsed / animationDuration, t); // 0부터 1까지의 진행도
+  //   const interpolatedPosition = new THREE.Vector3()
+  //     .copy(camera.position)
+  //     .lerp(mytargetPosition, progress); // 선형 보간
+
+  //   camera.position.copy(interpolatedPosition);
+
+  //   // 카메라가 목표 위치에 도달하면 애니메이션 종료
+  //   if (progress < t) {
+  //     requestAnimationFrame(myanimate);
+  //   }
+  //   else {
+  //     myanimate = false;
+  //   }
+  //   renderer.render(scene, camera);
+  //   // console.log(progress)
+  // }
+  // requestAnimationFrame(myanimate);
+
+  function gltfRotate() {
+
+    if ( gltfmodel1) {
+      const rotationSpeed = -0.001; // 회전 속도 (조절 가능)
+      gltfmodel1.rotation.y += rotationSpeed;
     }
-  })
-  scene.add(gltfmodel6);
-}, undefined, function (error) {
-  console.error(err)
-})
 
-loader.load('./models/mygltf/sign.gltf', function (gltf) {
-  gltfmodel7 = gltf.scene;
-  gltfmodel7.scale.set(3000, 3000, 3000);
-  gltfmodel7.position.set(15, -10, -80)
-  gltfmodel7.rotation.x = -0.2;
-  gltfmodel7.castShadow = true;
-  gltfmodel7.receiveShadow = true;
-  gltfmodel7.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
+    if (gltfmodel1456) {
+      gltfmodel1456.rotation.y += .01;
     }
-  })
-  scene.add(gltfmodel7);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/ladder.gltf', function (gltf) {
-  gltfmodel8 = gltf.scene;
-  gltfmodel8.scale.set(3000, 3000, 3000);
-  gltfmodel8.position.set(-15, -30, 80)
-  gltfmodel8.rotation.x = -0.2;
-  gltfmodel8.castShadow = true;
-  gltfmodel8.receiveShadow = true;
-  gltfmodel8.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel8);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/building1.gltf', function (gltf) {
-  gltfmodel9 = gltf.scene;
-  gltfmodel9.scale.set(3000, 3000, 3000);
-  gltfmodel9.position.set(-20, 10, -20)
-  gltfmodel9.castShadow = true;
-  gltfmodel9.receiveShadow = true;
-  gltfmodel9.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel9);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/bike2.gltf', function (gltf) {
-  gltfmodel10 = gltf.scene;
-  gltfmodel10.scale.set(2000, 2000, 2000);
-  gltfmodel10.position.set(-25, -10, -20)
-  gltfmodel10.rotation.x = -0.02;
-  gltfmodel10.castShadow = true;
-  gltfmodel10.receiveShadow = true;
-  gltfmodel10.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel10);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/cart2.gltf', function (gltf) {
-  gltfmodel11 = gltf.scene;
-  gltfmodel11.scale.set(3000, 3000, 3000);
-  gltfmodel11.position.set(25, -5, -30)
-  gltfmodel11.rotation.x = -0.02;
-  gltfmodel11.castShadow = true;
-  gltfmodel11.receiveShadow = true;
-  gltfmodel11.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel11);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/truck.gltf', function (gltf) {
-  gltfmodel12 = gltf.scene;
-  gltfmodel12.scale.set(1000, 1000, 1000);
-  gltfmodel12.position.set(25, -15, -15)
-  gltfmodel12.rotation.x = -0.02;
-  gltfmodel12.castShadow = true;
-  gltfmodel12.receiveShadow = true;
-  gltfmodel12.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel12);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/sign2.gltf', function (gltf) {
-  gltfmodel13 = gltf.scene;
-  gltfmodel13.scale.set(4000, 4000, 4000);
-  gltfmodel13.position.set(-25, -15, 55)
-  gltfmodel13.castShadow = true;
-  gltfmodel13.receiveShadow = true;
-  gltfmodel13.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel13);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/truck2.gltf', function (gltf) {
-  gltfmodel14 = gltf.scene;
-  gltfmodel14.scale.set(2500, 2500, 2500);
-  gltfmodel14.position.set(-50, -20, 0)
-  gltfmodel14.castShadow = true;
-  gltfmodel14.receiveShadow = true;
-  gltfmodel14.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel14);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/box.gltf', function (gltf) {
-  gltfmodel15 = gltf.scene;
-  gltfmodel15.scale.set(10000, 10000, 10000);
-  gltfmodel15.position.set(0, 0,40)
-  gltfmodel15.castShadow = true;
-  gltfmodel15.receiveShadow = true;
-  gltfmodel15.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel15);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-
-loader.load('./models/mygltf/cat.gltf', function (gltf) {
-  gltfmodel16 = gltf.scene;
-  gltfmodel16.scale.set(6000, 6000, 6000);
-  gltfmodel16.position.set(70, 0, 50)
-  gltfmodel16.castShadow = true;
-  gltfmodel16.receiveShadow = true;
-  gltfmodel16.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel16);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-
-loader.load('./models/mygltf/cigar.gltf', function (gltf) {
-  gltfmodel17 = gltf.scene;
-  gltfmodel17.scale.set(1500, 1500, 1500);
-  gltfmodel17.position.set(10, 0, 0)
-  gltfmodel17.castShadow = true;
-  gltfmodel17.receiveShadow = true;
-  gltfmodel17.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel17);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-
-// loader.load('./models/mygltf/jim.gltf', function (gltf) {
-//   gltfmodel18 = gltf.scene;
-//   gltfmodel18.scale.set(1000, 1000, 1000);
-//   gltfmodel18.position.set(0, 0, 0)
-//   gltfmodel18.castShadow = true;
-//   gltfmodel18.receiveShadow = true;
-//   gltfmodel18.traverse(function (node) {
-//     if (node.isMesh || node.isLight) {
-//       node.castShadow = true;
-//       node.receiveShadow = true;
-//       node.mapping = THREE.EquirectangularRefractionMapping;
-//     }
-//   })
-//   scene.add(gltfmodel18);
-// }, undefined, function (error) {
-//   console.error(err)
-// })
-
-
-loader.load('./models/mygltf/jim2.gltf', function (gltf) {
-  gltfmodel19 = gltf.scene;
-  gltfmodel19.scale.set(2000, 2000, 2000);
-  gltfmodel19.position.set(0, -20, 0)
-  gltfmodel19.castShadow = true;
-  gltfmodel19.receiveShadow = true;
-  gltfmodel19.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel19);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/leaf.gltf', function (gltf) {
-  gltfmodel20 = gltf.scene;
-  gltfmodel20.scale.set(1700, 1700, 1700);
-  gltfmodel20.position.set(10, 0, -10);
-  gltfmodel20.castShadow = true;
-  gltfmodel20.receiveShadow = true;
-  gltfmodel20.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel20);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-
-// loader.load('./models/mygltf/radish.gltf', function (gltf) {
-//   gltfmodel21 = gltf.scene;
-//   gltfmodel21.scale.set(100, 100, 100);
-//   gltfmodel21.position.set(0, 0, 0)
-//   gltfmodel21.castShadow = true;
-//   gltfmodel21.receiveShadow = true;
-//   gltfmodel21.traverse(function (node) {
-//     if (node.isMesh || node.isLight) {
-//       node.castShadow = true;
-//       node.receiveShadow = true;
-//       node.mapping = THREE.EquirectangularRefractionMapping;
-//     }
-//   })
-//   scene.add(gltfmodel21);
-// }, undefined, function (error) {
-//   console.error(err)
-// })
-
-
-loader.load('./models/mygltf/sign3.gltf', function (gltf) {
-  gltfmodel22 = gltf.scene;
-  gltfmodel22.scale.set(1000, 1000, 1000);
-  gltfmodel22.position.set(0, 0, 0)
-  gltfmodel22.castShadow = true;
-  gltfmodel22.receiveShadow = true;
-  gltfmodel22.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel22);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/sign4.gltf', function (gltf) {
-  gltfmodel23 = gltf.scene;
-  gltfmodel23.scale.set(1000, 1000, 1000);
-  gltfmodel23.position.set(0, 0, 0)
-  gltfmodel23.castShadow = true;
-  gltfmodel23.receiveShadow = true;
-  gltfmodel23.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel23);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/trash.gltf', function (gltf) {
-  gltfmodel24 = gltf.scene;
-  gltfmodel24.scale.set(2000, 2000, 2000);
-  gltfmodel24.position.set(0, 0, 0)
-  gltfmodel24.castShadow = true;
-  gltfmodel24.receiveShadow = true;
-  gltfmodel24.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel24);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/umbrella.gltf', function (gltf) {
-  gltfmodel26 = gltf.scene;
-  gltfmodel26.scale.set(1000, 1000, 1000);
-  gltfmodel26.position.set(0, 0, 0)
-  gltfmodel26.castShadow = true;
-  gltfmodel26.receiveShadow = true;
-  gltfmodel26.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel26);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-loader.load('./models/mygltf/jim3.gltf', function (gltf) {
-  gltfmodel27 = gltf.scene;
-  gltfmodel27.scale.set(5000, 5000, 5000);
-  gltfmodel27.position.set(0, 0, 0)
-  gltfmodel27.castShadow = true;
-  gltfmodel27.receiveShadow = true;
-  gltfmodel27.traverse(function (node) {
-    if (node.isMesh || node.isLight) {
-      node.castShadow = true;
-      node.receiveShadow = true;
-      node.mapping = THREE.EquirectangularRefractionMapping;
-    }
-  })
-  scene.add(gltfmodel27);
-}, undefined, function (error) {
-  console.error(err)
-})
-
-//Plane 바닥면 
-// let material = new THREE.MeshPhongMaterial({
-//   //envMap: texture,
-//   // color: 0xff0000,
-//   // flatShading: true,
-// });
-
-// let geometryP = new THREE.PlaneGeometry(1000, 1000, 10,10)
-// let plane = new THREE.Mesh(geometryP, material);
-// plane.rotation.x = -Math.PI/2;
-// //plane.position.y = -3;
-// plane.position.set(0,-5,0)
-// plane.castShadow = true;
-// plane.receiveShadow = true;
-// scene.add(plane);
-
-let light = new THREE.DirectionalLight(0xffffff, 20);
-light.position.set(0, 100, 0);
-light.target.position.set(0, 0, 0);
-light.castShadow = true;
-light.shadow.mapSize.width = 2048;
-light.shadow.mapSize.height = 2048;
-light.shadow.camera.near = 0.1;
-light.shadow.camera.far = 100;
-light.shadow.focus = 1;
-light.shadow.bias = -0.001;
-// const helper = new THREE.DirectionalLightHelper( light, 5 );
-// scene.add( helper );
-scene.add(light);
-
-
-camera.position.z = 9;
-camera.position.y = 7;
-
-function gltfRotate() {
-  //쓰레기
-  if (gltfmodel) {
-    const rotationSpeed = -0.009; // 회전 속도 (조절 가능)
-    gltfmodel.rotation.y += rotationSpeed;
-  }
-  //오토바이
-  if (gltfmodel2) {
-    const rotationSpeed = 0.01; // 회전 속도 (조절 가능)
-    gltfmodel2.rotation.y += -0.01;
-    gltfmodel2.rotation.x += rotationSpeed;
   }
 
-  if (gltfmodel3) {
-    gltfmodel3.rotation.y += 0.002;
+
+
+  // window.addEventListener('mousemove', onMove, false);
+  // window.addEventListener('mousemove', onMoveAll, false);
+  window.addEventListener('resize', onWindowResize, false);
+
+  function resetModelColor() {
+    cube.traverse(function (node) {
+      if (cube.isMesh) {
+        // 원래의 색상으로 설정 (여기서는 하얀색)
+        node.material.color.set(0xffffff);
+      }
+    });
+  }
+  // function onMove() {
+
+  //   event.preventDefault();
+
+  //   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  //   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  //   raycaster.setFromCamera(mouse, camera);
+
+  //   var intersects = raycaster.intersectObject(cube, true);
+
+  //   if (intersects.length > 0) {
+
+  //     var objects = intersects[0].object;
+
+  //     objects.material.color.set(0xfe0000);
+  //   } else {
+  //     resetModelColor()
+  //   }
+  //   if (intersects.length > 0) {
+  //     document.body.style.cursor = 'pointer';
+  //   } else {
+  //     // 교차된 객체가 없는 경우 기본 커서로 변경
+  //     document.body.style.cursor = 'auto';
+  //   }
+  //   render();
+  // }
+
+
+  function onWindowResize() {
+
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    render();
+
+  }
+  // let targetPosition = new THREE.Vector3(10, 10, 10); // 이동할 목표 위치
+  // let duration = 1000; // 애니메이션 지속 시간 (밀리초)
+  // let startTime = null; // 애니메이션 시작 시간
+  // let initialPosition = camera.position.clone(); // 현재 카메라 위치
+
+  // function animateCamera() {
+  //   let now = Date.now();
+  //   if (startTime === null) {
+  //     startTime = now;
+  //   }
+  //   let elapsed = now - startTime;
+  //   let t = Math.min(1, elapsed / duration); // 애니메이션 진행도 (0부터 1까지)
+
+  //   // 보간된 위치 계산 (선형 보간)
+  //   let interpolatedPosition = initialPosition.clone().lerp(targetPosition, t);
+
+  //   // 카메라 위치 설정
+  //   camera.position.copy(interpolatedPosition);
+
+  //   // 애니메이션 종료 검사
+  //   if (t < 1) {
+  //     requestAnimationFrame(animateCamera);
+  //   } else {
+  //     controls.enabled = true; // 애니메이션 종료 후 컨트롤 활성화
+  //   }
+  // }
+  // function onClick(e) {
+  //   e.preventDefault();
+  //   controls.enabled = false;
+  //   initialPosition = camera.position.clone();
+  //   mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  //   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  //   raycaster.setFromCamera(mouse, camera);
+  //   const intersects = raycaster.intersectObjects([cube], true);
+  //   if (intersects.length > 0) {
+
+  //     // 클릭된 객체의 URL로 새 창 열기
+  //     // window.open('https://openai.com/index/chatgpt', '_blank');
+  //     targetPosition.set(100, 10, 50); // 목표 위치 설정
+  //     startTime = null; // 애니메이션 시작 시간 초기화
+  //     animateCamera(); // 카메라 애니메이션 시작
+
+  //   }
+  //   else {
+  //     controls.enabled = true;
+  //   }
+  // }
+  // window.addEventListener('click', onClick, false);
+
+
+  // 키보드 입력 상태를 저장하는 객체
+  // const keys = {
+  //   ArrowUp: false,
+  //   ArrowDown: false,
+  //   ArrowLeft: false,
+  //   ArrowRight: false
+  // };
+
+  // // 키보드 이벤트 리스너 등록
+  // window.addEventListener('keydown', (event) => {
+  //   if (keys.hasOwnProperty(event.code)) {
+  //     keys[event.code] = true;
+  //   }
+  // });
+
+  // window.addEventListener('keyup', (event) => {
+  //   if (keys.hasOwnProperty(event.code)) {
+  //     keys[event.code] = false;
+  //   }
+  // });
+
+  // // Character의 초기 위치와 이동 속도 정의
+  // const cubePosition = new THREE.Vector3(20, 20, 45);
+  // const moveSpeed = 0.5;
+  // const rotateSpeed = 1;
+
+  // function updateCubePosition() {
+  //   if (keys['ArrowUp']) {
+  //     cubePosition.z -= moveSpeed;
+  //   }
+  //   if (keys['ArrowDown']) {
+  //     cubePosition.z += moveSpeed;
+  //   }
+  //   if (keys['ArrowLeft']) {
+  //     cubePosition.x -= rotateSpeed;
+  //     mygltf.rotation.y += 0.03;
+  //   }
+  //   if (keys['ArrowRight']) {
+  //     cubePosition.x += rotateSpeed;
+  //     mygltf.rotation.y -= 0.03;
+  //   }
+
+  //   // Cube의 위치 업데이트
+  //   mygltf.position.copy(cubePosition);
+  //   // 큐브를 타겟으로 지정
+  //   const cubeTarget = mygltf.position.clone();
+
+  //   // 카메라 타겟 설정
+  //   camera.lookAt(cubeTarget);
+  //   // camera.position.z = (cube.position.z + 10)
+  // }
+
+
+  function handleResize() {
+    //종횡비 조절
+    camera.aspect = window.innerWidth / window.innerHeight;
+    //camera.updateProjectionMatrix(); 이 code를 호출해야 정상적으로 송출됨 
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    //재호출
+    renderer.render(scene, camera);
+    controls.update();
   }
 
-  if (gltfmodel4) {
-    gltfmodel4.rotation.y += 0.003;
-    gltfmodel4.rotation.x += -0.004;
-  }
-  //사람
-  if (gltfmodel5) {
-    gltfmodel5.rotation.y += -0.02;
-  }
-  //warehouse
-  if (gltfmodel6) {
-    gltfmodel6.rotation.y += 0.002;
-  }
-   //sign
-  if (gltfmodel7) {
-    gltfmodel7.rotation.y += 0.02;
-  }
-  //ladde
-  if (gltfmodel8) {
-    gltfmodel8.rotation.y += 0.004;
-  }
-  if (gltfmodel9) {
-    gltfmodel9.rotation.y += 0.003;
-  }
 
-  if (gltfmodel9) {
-    gltfmodel9.rotation.y += 0.01;
+  // const mixer = new THREE.AnimationMixer(mygltf);
+  // const hasAnimation = gltf.animations.length !== 0;
+
+  // document.addEventListener('keydown', function (event) {
+  //   // 눌린 키의 keyCode 또는 key를 확인하여 화살표 키인지 확인
+  //   if (event.key === 'ArrowUp' || event.key === 'ArrowDown' ||
+  //     event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+  //     if (hasAnimation) {
+  //       const action = mixer.clipAction(gltf.animations[0]);
+  //       action.play();
+  //     } else {
+  //       hasAnimation = false;
+  //     }
+  //   }
+  // });
+
+  // const clock = new THREE.Clock();
+
+  function animate() {
+
+
+    // const delta = clock.getDelta();
+    // mixer.update(delta);// 이 값을 지우니 gtfrotate 동작 well
+    controls.update();
+    gltfRotate();
+    // updateCubePosition();
+
+    composer.render();
+    renderer.render(scene, camera);
+
+    //전체 회전함 
+    // scene.traverse(function ( gltfmodel1) {
+    //   if ( gltfmodel1 instanceof THREE.Mesh) {
+    //      gltfmodel1.rotation.x += 0.01; // X 축 회전
+    //      gltfmodel1.rotation.y += 0.02; // Y 축 회전
+    //      gltfmodel1.rotation.z += 0.03; // Z 축 회전
+    //   }
+
+    // });
+
+    requestAnimationFrame(animate);
   }
-  //cart2
-  if (gltfmodel11) {
-    gltfmodel11.rotation.z += 0.02;
-  }
-  if (gltfmodel12) {
-    gltfmodel12.rotation.y += 0.002;
-  }
-  if (gltfmodel13) {
-    gltfmodel13.rotation.y += 0.02;
-  }
-  if (gltfmodel14) {
-    gltfmodel14.rotation.y += -0.001;
-  }
-  if (gltfmodel15) {
-    gltfmodel15.rotation.z += 0.01;
-  }
-  if (gltfmodel16) {
-    gltfmodel16.rotation.y += -0.002;
-  }
-  if (gltfmodel17) {
-    gltfmodel17.rotation.x += 0.02;
-  }
-  if (gltfmodel19) {
-    gltfmodel19.rotation.y += -0.02;
-  }
-  if (gltfmodel20) {
-    gltfmodel20.rotation.y += 0.02;
-    gltfmodel20.rotation.x += 0.01;
-  }
+  renderer.xr.enabled = true;
+
+  renderer.setAnimationLoop(function () {
+
+    renderer.render(scene, camera);
+
+  });
+
+
+  animate()
+
+
+
+
 }
-
-
-
-// create an object for the sound to play from
-const sphere = new THREE.SphereGeometry(0.1, 100, 30);
-const material2 = new THREE.MeshPhongMaterial({ color: 0xff2200 });
-const mesh = new THREE.Mesh(sphere, material2);
-mesh.position.set(0, 0, 0)
-mesh.scale.set(0, 0, )
-scene.add(mesh);
-
-
-
-function handleResize() {
-  //종횡비 조절
-  camera.aspect = window.innerWidth / window.innerHeight;
-  //camera.updateProjectionMatrix(); 이 code를 호출해야 정상적으로 송출됨 
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  //재호출
-  renderer.render(scene, camera);
-  controls.update();
-}
-
-
-//mouseX, mouseY 활용
-
-function animate() {
-  controls.update();
-  // Define the panning limits for the camera
-  gltfRotate();
-  composer.render();
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
-}
-
-animate()
-
-//bloompass render 하는 코드 
-// renderer.setAnimationLoop(() => {
-//   //renderer.render(scene, camera);
-//   animate()
-// });
-
-
-
-
